@@ -1,27 +1,13 @@
 import produce from "immer";
 import { StoreSlice } from "./useRoot";
+import { UserData } from "@/interfaces/user";
+import { Image } from "@/interfaces/common";
 
 type USER = {
 	auth: { isAuthenticated: boolean; accessToken: string; refreshToken: string };
 	data: any;
 	language: any;
 	country: any;
-};
-
-export type UserData = {
-	firstName: string;
-	lastName: string;
-	email: string;
-	adress: string;
-	phoneNumber: string;
-	password: string;
-	uid: string;
-	photoURL?: {
-		file: File;
-		url: string;
-	};
-	pseudo?: string;
-	company?: string;
 };
 
 type USER_STORE = {
@@ -49,7 +35,7 @@ type USER_STORE = {
 				email: string;
 				adress: string;
 				phoneNumber: string;
-				photoURL: string;
+				photoURL: string | Image;
 				pseudo?: string;
 				entreprise?: string;
 			};

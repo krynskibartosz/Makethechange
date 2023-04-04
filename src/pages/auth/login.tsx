@@ -18,7 +18,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Typography, TextField, Button } from "@mui/material";
 import { app } from "../_app";
-import { UserData } from "@/store/user";
+import { UserData } from "@/interfaces/user";
 
 const firestoreDB = getFirestore(app);
 

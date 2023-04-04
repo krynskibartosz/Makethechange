@@ -25,6 +25,7 @@ specifiers:
   immer: ^9.0.21
   next: 13.2.4
   next-i18next: ^13.2.2
+  prettier: 2.8.7
   react: 18.2.0
   react-device-detect: ^2.2.3
   react-dom: 18.2.0
@@ -78,6 +79,7 @@ dependencies:
 
 devDependencies:
   '@types/react-places-autocomplete': 7.2.9
+  prettier: 2.8.7
   tailwindcss: 3.2.7
 
 packages:
@@ -3548,6 +3550,12 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
     dev: false
+
+  /prettier/2.8.7:
+    resolution: {integrity: sha512-yPngTo3aXUUmyuTjeTUT75txrf+aMh9FiD7q9ZE/i6r0bPb22g4FsE6Y338PQX1bmfy08i9QQCB7/rcUAVntfw==}
+    engines: {node: '>=10.13.0'}
+    hasBin: true
+    dev: true
 
   /prop-types/15.8.1:
     resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}

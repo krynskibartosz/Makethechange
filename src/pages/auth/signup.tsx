@@ -1,7 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
 
-import { getFirestore, setDoc, doc } from "firebase/firestore";
-
 import * as yup from "yup";
 
 import useRootStore from "@/store/useRoot";
@@ -9,7 +7,7 @@ import {
 	getAuth,
 	createUserWithEmailAndPassword,
 	sendEmailVerification,
-	updateProfile,
+	User,
 } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -26,53 +24,41 @@ import {
 	useForm,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { app } from "../_app";
-import { getStorage, ref, getDownloadURL, uploadBytes } from "firebase/storage";
+import { Checkbox, Button, FormControlLabel, Switch } from "@mui/material";
+import { ImageInput } from "@/components/forms/Image";
 import {
-	TextField,
-	Checkbox,
-	Button,
-	FormControlLabel,
-	Switch,
-} from "@mui/material";
-import { ImageInput } from "@/components/Image";
-import { UserData } from "@/store/user";
+	uploadImageToFirebaseStorage,
+	updateUserProfileInFirebase,
+	saveUserSignupDataToFirestore,
+	getFirebaseErrorMessage,
+} from "@/features/auth/signup/signup";
+import { UserData } from "@/interfaces/user";
+import { Image } from "@/interfaces/common";
+import { minPasswordLength } from "@/features/auth/signup/constants";
+import { FormTextField } from "@/components/forms/TextField";
 
-const firestoreDB = getFirestore(app);
-
-const getFirebaseErrorMessage = (errorCode: string) => {
-	switch (errorCode) {
-		case "auth/email-already-in-use":
-			return "The email address you entered is already associated with an account. Please use a different email address or login instead.";
-		case "auth/invalid-email":
-			return "The email address you entered is not valid. Please check your email address and try again.";
-		case "auth/weak-password":
-			return "The password you entered is weak. Please use a stronger password.";
-		default:
-			return "An error occurred while processing your request. Please try again later.";
-	}
-};
-
+// todo: bug on phone input, maybe find a lib for
 const Signup = () => {
 	const { user, signup } = useRootStore.getState();
-	const { t } = useTranslation();
+	const { t: translation } = useTranslation();
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const router = useRouter();
+	const emailInputRef = useRef<HTMLInputElement>(null);
+
 	const schema = yup.object().shape({
-		firstName: yup.string().required(t("first name") as string),
-		lastName: yup.string().required(t("last name") as string),
-		adress: yup.string().required(t("Adress") as string),
-		phoneNumber: yup.string().required(t("Adress") as string),
+		firstName: yup.string().required(translation("first name") as string),
+		lastName: yup.string().required(translation("last name") as string),
+		adress: yup.string().required(translation("Adress") as string),
+		phoneNumber: yup.string().required(translation("Adress") as string),
 		email: yup
 			.string()
-			.required(t("form.error.email") as string)
+			.required(translation("form.error.email") as string)
 			.email(),
 		password: yup
 			.string()
-			.required(t("Le mot de passe est requis") as string)
-			.min(8, t("il faut min 8 car") as string),
+			.required(translation("Le mot de passe est requis") as string)
+			.min(minPasswordLength, translation("il faut min 8 car") as string),
 	});
-	const [isSubmitting, setIsSubmitting] = useState(false);
-	const router = useRouter();
-
 	const {
 		handleSubmit,
 		formState: { errors },
@@ -83,11 +69,33 @@ const Signup = () => {
 	} = useForm({
 		resolver: yupResolver(schema),
 	});
+	const watchIfIsACompany = watch("companySwitch");
 
-	const watchCompanyChange = watch("companySwitch");
-	const emailInputRef = useRef<HTMLInputElement>(null);
+	const storeUserDataInCache = async (
+		user: User,
+		userSignupData: UserData,
+		firstName: string,
+		lastName: string
+	) => {
+		const idTokenResult = await user.getIdTokenResult();
+		const accessToken = idTokenResult.token;
+		const refreshToken = user.refreshToken;
 
-	const handleSubmitUserSignup: SubmitHandler<FieldValues> = async (data) => {
+		signup({
+			user: {
+				auth: {
+					isAuth: true,
+					accessToken: accessToken,
+					refreshToken: refreshToken,
+				},
+				data: { ...userSignupData, firstName, lastName },
+			},
+		});
+	};
+
+	const handleUserSignupFormSubmit: SubmitHandler<FieldValues> = async (
+		data
+	) => {
 		const {
 			email,
 			password,
@@ -111,17 +119,9 @@ const Signup = () => {
 			);
 			await sendEmailVerification(user);
 
-			let downloadURL = "";
-			if (photoURL?.file) {
-				const storage = getStorage();
-				const fileRef = ref(storage, `images/${photoURL.file.name}`);
-				await uploadBytes(fileRef, photoURL.file);
-				downloadURL = await getDownloadURL(fileRef);
-			}
-			await updateProfile(user, {
-				displayName: `${firstName} ${lastName}`,
-				photoURL: downloadURL ?? "",
-			});
+			const downloadURL = await uploadImageToFirebaseStorage(photoURL as Image);
+
+			await updateUserProfileInFirebase(user, firstName, lastName, downloadURL);
 
 			const userSignupData = {
 				uid: user.uid,
@@ -132,25 +132,21 @@ const Signup = () => {
 				photoURL: downloadURL,
 				entreprise: company ?? "",
 				pseudo: pseudo ?? "",
+				password,
 			};
 
-			await setDoc(doc(firestoreDB, "users", user.uid), userSignupData);
-
-			// Get access token and refresh token
-			const idTokenResult = await user.getIdTokenResult();
-			const accessToken = idTokenResult.token;
-			const refreshToken = user.refreshToken;
-
-			signup({
-				user: {
-					auth: {
-						isAuth: true,
-						accessToken: accessToken,
-						refreshToken: refreshToken,
-					},
-					data: { ...userSignupData, firstName, lastName },
-				},
+			await saveUserSignupDataToFirestore(user, {
+				...userSignupData,
+				firstName,
+				lastName,
 			});
+
+			await storeUserDataInCache(
+				user,
+				{ ...userSignupData, firstName, lastName },
+				firstName,
+				lastName
+			);
 
 			router.push("/dashboard");
 		} catch (error: any) {
@@ -163,125 +159,70 @@ const Signup = () => {
 
 	useEffect(() => {
 		if (user.auth.isAuthenticated) router.push("/dashboard");
-	}, [router]);
+	}, [router, user.auth.isAuthenticated]);
 
 	return (
 		<form
-			onSubmit={handleSubmit(handleSubmitUserSignup)}
+			onSubmit={handleSubmit(handleUserSignupFormSubmit)}
 			className="w-full max-w-md gap-y-5 flex flex-col"
 		>
-			{/* @ts-ignore */}
-			<span className="h-12">{errors?.password?.message}</span>
+			<span className="h-12">{errors?.email?.message as string}</span>
 			<h1 className="text-4xl font-medium mb-6">Signup</h1>
-			<Controller
+			<FormTextField
 				name="firstName"
+				label={translation("First name")}
+				placeholder="Make the change"
 				control={control}
-				render={({ field: { value = "", onChange }, fieldState }) => {
-					return (
-						<>
-							<TextField
-								placeholder="Make the change"
-								error={!!fieldState.error}
-								type="text"
-								label={t("First name")}
-								helperText={fieldState.error?.message}
-								required
-								onChange={onChange}
-								value={value}
-							/>
-						</>
-					);
-				}}
+				required
 			/>
-			<Controller
+
+			<FormTextField
 				name="lastName"
+				label={translation("Last name")}
+				placeholder="Make the change"
 				control={control}
-				render={({ field: { value = "", onChange }, fieldState }) => {
-					return (
-						<>
-							<TextField
-								placeholder="Make the change"
-								error={!!fieldState.error}
-								type="text"
-								label={t("Last name")}
-								helperText={fieldState.error?.message}
-								required
-								onChange={onChange}
-								value={value}
-							/>
-						</>
-					);
-				}}
+				required
 			/>
-			<Controller
+
+			<FormTextField
 				name="pseudo"
+				label={translation("pseudo")}
+				placeholder="Make the change"
 				control={control}
-				render={({ field: { value = "", onChange }, fieldState }) => {
-					return (
-						<>
-							<TextField
-								placeholder="Make the change"
-								error={!!fieldState.error}
-								type="text"
-								label={t("Pseudo")}
-								helperText={fieldState.error?.message}
-								onChange={onChange}
-								value={value}
-							/>
-						</>
-					);
-				}}
 			/>
-			<Controller
+
+			<FormTextField
 				name="email"
+				label={translation("Email")}
+				placeholder="Make the change"
 				control={control}
-				rules={{ required: "Email is required" }}
-				render={({ field, fieldState }) => (
-					<TextField
-						inputRef={emailInputRef}
-						label="Email"
-						placeholder="Enter your email"
-						error={!!fieldState.error}
-						type="email"
-						required
-						helperText={fieldState.error?.message}
-						{...field}
-					/>
-				)}
+				type="email"
+				required
 			/>
-			<Controller
+			<FormTextField
 				name="adress"
+				label={translation("Adress")}
+				placeholder="Make the change"
 				control={control}
-				rules={{ required: "Email is required" }}
-				render={({ field, fieldState }) => (
-					<TextField
-						label="Adress"
-						placeholder="Enter your email"
-						required
-						error={!!fieldState.error}
-						helperText={fieldState.error?.message}
-						{...field}
-					/>
-				)}
+				required
 			/>
 			<Controller
 				name="phoneNumber"
 				defaultValue=""
 				control={control}
-				render={({ field: { value, onChange }, fieldState }) => {
+				render={({ field, fieldState }) => {
 					return (
 						<div data-cy="phone" className="relative w-full" id="phone-parent">
 							<p className="mb-2 w-full text-sm font-semibold text-fresh-gray-900 first-letter:uppercase md:text-base 2xl:text-lg">
-								{t("form.phone")}
+								{translation("form.phone")}
 							</p>
 							<div className="relative w-full">
 								<PhoneInput
-									onChange={onChange}
-									value={value}
 									country={"be"}
 									inputClass={`!w-full !border !border-fresh-gray-200 group-hover:!border-[#9ABE36] focus:!border-[#9ABE36] focus:!bg-fresh-gray-50 2xl:!text-lg group-hover:!bg-fresh-gray-50 min-h-[42px] ${
 										fieldState.error ? "!border-fresh-red-900" : ""
 									}`}
+									{...field}
 								/>
 							</div>
 							{fieldState.error && (
@@ -294,84 +235,36 @@ const Signup = () => {
 				}}
 			/>
 			<ImageInput name="photoURL" control={control} />
-
-			<Controller
+			<FormTextField
 				name="password"
-				defaultValue=""
+				label={translation("Password")}
+				placeholder="Make the change"
 				control={control}
-				rules={{
-					required: "Password is required",
-					minLength: {
-						value: 8,
-						message: "Password should have at least 8 characters",
-					},
-				}}
-				render={({ field: { onChange, value }, fieldState }) => (
-					<TextField
-						label="Password"
-						placeholder="Enter your password"
-						required
-						type="password"
-						error={!!fieldState.error}
-						value={value}
-						helperText={fieldState.error?.message}
-						onChange={onChange}
-					/>
-				)}
+				type="password"
+				required
 			/>
-			<Controller
+			<FormTextField
 				name="confirmPassword"
-				defaultValue=""
+				label={translation("Confirm password")}
+				placeholder="Make the change"
 				control={control}
-				rules={{
-					required: "Password is required",
-					minLength: {
-						value: 8,
-						message: "Password should have at least 8 characters",
-					},
-				}}
-				render={({ field: { onChange, value }, fieldState }) => (
-					<TextField
-						label="Confirm password"
-						placeholder="Confirm password"
-						required
-						error={!!fieldState.error}
-						type="password"
-						value={value}
-						helperText={fieldState.error?.message}
-						onChange={onChange}
-					/>
-				)}
+				type="password"
+				required
 			/>
+
 			<Controller
 				name="companySwitch"
 				control={control}
-				render={({ field: { onChange, value }, fieldState }) => (
-					<FormControlLabel
-						control={<Switch value={value} onChange={onChange} />}
-						label="Company"
-					/>
+				render={({ field }) => (
+					<FormControlLabel control={<Switch {...field} />} label="Company" />
 				)}
 			/>
-			{watchCompanyChange && (
-				<Controller
+			{watchIfIsACompany && (
+				<FormTextField
 					name="company"
+					label={translation("Company")}
+					placeholder="Make the change"
 					control={control}
-					render={({ field: { value = "", onChange }, fieldState }) => {
-						return (
-							<>
-								<TextField
-									placeholder="Company"
-									error={!!fieldState.error}
-									type="text"
-									label={t("company")}
-									helperText={fieldState.error?.message}
-									onChange={onChange}
-									value={value}
-								/>
-							</>
-						);
-					}}
 				/>
 			)}
 
@@ -382,23 +275,23 @@ const Signup = () => {
 					color="primary"
 				/>
 				<span className="ml-2">
-					{t("By signing up, you agree to our")}{" "}
+					{translation("By signing up, you agree to our")}{" "}
 					<a
 						href="/terms-and-conditions"
 						target="_blank"
 						rel="noreferrer"
 						className="underline"
 					>
-						{t("terms of use")}
+						{translation("terms of use")}
 					</a>{" "}
-					{t("and")}{" "}
+					{translation("and")}{" "}
 					<a
 						href="/privacy-policy"
 						target="_blank"
 						rel="noreferrer"
 						className="underline"
 					>
-						{t("privacy policy")}
+						{translation("privacy policy")}
 					</a>
 				</span>
 			</div>
@@ -406,15 +299,15 @@ const Signup = () => {
 				type="submit"
 				fullWidth
 				variant="contained"
-				color="primary"
+				color="secondary"
 				className="mt-4"
 				disabled={isSubmitting}
 			>
 				{isSubmitting ? "Loading..." : "Signup"}
 			</Button>
 			<p className="text-center mt-4">
-				{t("Already have an account?")}{" "}
-				<Link href="/auth/login">{t("form.login.button")}</Link>
+				{translation("Already have an account?")}{" "}
+				<Link href="/auth/login">{translation("form.login.button")}</Link>
 			</p>
 		</form>
 	);
