@@ -19,6 +19,10 @@ import {
 } from "@/features/auth/login/login";
 import { User } from "firebase/auth";
 
+import { firestoreDB } from "@/features/auth/signup/constants";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+
 const Login = () => {
 	const { login, user } = useRootStore.getState();
 	const { t: translation } = useTranslation();
@@ -62,7 +66,7 @@ const Login = () => {
 	};
 
 	const handleLoginFormSubmit: SubmitHandler<FieldValues> = async (data) => {
-		const { email, password } = data as UserData;
+		const { email, password } = data as UserData & { password: string };
 		setIsSubmitting(true);
 		try {
 			const auth = getAuth();
@@ -79,6 +83,51 @@ const Login = () => {
 		} catch (error: any) {
 			setIsSubmitting(false);
 			handleLoginError(error);
+		}
+	};
+
+	const handleLoginWithGoogle = async () => {
+		const auth = getAuth();
+
+		const provider = new GoogleAuthProvider();
+
+		try {
+			const result = await signInWithPopup(auth, provider);
+			const idTokenResult = await result.user.getIdTokenResult();
+			const accessToken = idTokenResult.token;
+			const refreshToken = result.user.refreshToken;
+
+			const userDataDoc = await getDoc(
+				doc(firestoreDB, "users", result.user.uid)
+			);
+			const data = userDataDoc.data();
+			const nameArray = data?.name?.split(" ");
+			const firstName = nameArray?.[0] as string;
+			const lastName = nameArray?.[nameArray.length - 1] as string;
+			login({
+				user: {
+					auth: {
+						isAuth: true,
+						accessToken: accessToken,
+						refreshToken: refreshToken,
+					},
+					data: {
+						adress: data?.adress,
+						email: data?.email,
+						firstName,
+						lastName,
+						phoneNumber: data?.phoneNumber,
+						photoURL: data?.photoURL,
+						uid: data?.uid,
+						company: data?.entreprise,
+						pseudo: data?.pseudo,
+					},
+				},
+			});
+
+			router.push("/dashboard");
+		} catch (error) {
+			console.error(error);
 		}
 	};
 
@@ -125,6 +174,7 @@ const Login = () => {
 			<Link href="/auth/signup" className="pt-5">
 				Pas encore de compte ? Inscrivez-vous{" "}
 			</Link>
+			<button onClick={handleLoginWithGoogle}>Login with Google</button>
 		</div>
 	);
 };

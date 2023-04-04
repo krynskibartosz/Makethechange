@@ -6,7 +6,6 @@ export type UserData = {
 	email: string;
 	adress: string;
 	phoneNumber: string;
-	password: string;
 	uid: string;
 	photoURL: string | Image;
 	pseudo?: string;

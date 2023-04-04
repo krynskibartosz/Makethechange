@@ -1,8 +1,6 @@
 import { setDoc, doc } from "firebase/firestore";
 
 import { updateProfile, User } from "firebase/auth";
-import "react-phone-input-2/lib/style.css";
-import "firebase/auth";
 
 import { getStorage, ref, getDownloadURL, uploadBytes } from "firebase/storage";
 

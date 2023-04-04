@@ -41,6 +41,25 @@ type USER_STORE = {
 			};
 		};
 	}) => void;
+	signupWithGoogle: (reponse: {
+		user: {
+			auth: {
+				isAuth: boolean;
+				accessToken: string;
+				refreshToken: string;
+			};
+			data: {
+				firstName: string;
+				lastName: string;
+				email: string;
+				adress?: string;
+				phoneNumber?: string;
+				photoURL?: string | Image;
+				pseudo?: string;
+				entreprise?: string;
+			};
+		};
+	}) => void;
 };
 
 const initialUser = {
@@ -69,6 +88,18 @@ export const userSlice: StoreSlice<USER_STORE> = (set) => ({
 		);
 	},
 	signup: (response) => {
+		set((state) =>
+			produce(state, (draft) => {
+				draft.user.auth = {
+					isAuthenticated: response.user.auth.isAuth,
+					accessToken: response.user.auth.accessToken,
+					refreshToken: response.user.auth.refreshToken,
+				};
+				draft.user.data = response.user.data;
+			})
+		);
+	},
+	signupWithGoogle: (response) => {
 		set((state) =>
 			produce(state, (draft) => {
 				draft.user.auth = {

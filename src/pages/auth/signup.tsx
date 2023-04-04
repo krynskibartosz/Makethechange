@@ -37,9 +37,17 @@ import { Image } from "@/interfaces/common";
 import { minPasswordLength } from "@/features/auth/signup/constants";
 import { FormTextField } from "@/components/forms/TextField";
 
+import { firestoreDB } from "@/features/auth/signup/constants";
+import {
+	signInWithPopup,
+	GoogleAuthProvider,
+	updateProfile,
+} from "firebase/auth";
+import { setDoc, doc } from "firebase/firestore";
+
 // todo: bug on phone input, maybe find a lib for
 const Signup = () => {
-	const { user, signup } = useRootStore.getState();
+	const { user, signup, signupWithGoogle } = useRootStore.getState();
 	const { t: translation } = useTranslation();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const router = useRouter();
@@ -106,7 +114,7 @@ const Signup = () => {
 			lastName,
 			pseudo,
 			company,
-		} = data as UserData;
+		} = data as UserData & { password: string };
 
 		setIsSubmitting(true);
 
@@ -157,159 +165,216 @@ const Signup = () => {
 		}
 	};
 
+	const handleSignupWithGoogle = async () => {
+		const auth = getAuth();
+
+		const provider = new GoogleAuthProvider();
+
+		try {
+			const result = await signInWithPopup(auth, provider);
+			const { displayName, email, phoneNumber, photoURL, uid } = result.user;
+
+			const gUser = {
+				displayName,
+				email,
+				phoneNumber,
+				photoURL,
+				uid,
+			};
+			await sendEmailVerification(result.user);
+			await updateProfile(result.user, {
+				displayName,
+				photoURL,
+			});
+			await setDoc(doc(firestoreDB, "users", uid), gUser);
+
+			const idTokenResult = await result.user.getIdTokenResult();
+			const accessToken = idTokenResult.token;
+			const refreshToken = result.user.refreshToken;
+			const nameArray = displayName?.split(" ");
+			const firstName = nameArray?.[0] as string;
+			const lastName = nameArray?.[nameArray.length - 1] as string;
+			signupWithGoogle({
+				user: {
+					auth: {
+						isAuth: true,
+						accessToken: accessToken,
+						refreshToken: refreshToken,
+					},
+					data: {
+						email: email as string,
+						firstName,
+						lastName,
+						photoURL: photoURL ?? "",
+					},
+				},
+			});
+			router.push("/dashboard");
+		} catch (error) {
+			console.error(error);
+		}
+	};
+
 	useEffect(() => {
 		if (user.auth.isAuthenticated) router.push("/dashboard");
 	}, [router, user.auth.isAuthenticated]);
 
 	return (
-		<form
-			onSubmit={handleSubmit(handleUserSignupFormSubmit)}
-			className="w-full max-w-md gap-y-5 flex flex-col"
-		>
-			<span className="h-12">{errors?.email?.message as string}</span>
-			<h1 className="text-4xl font-medium mb-6">Signup</h1>
-			<FormTextField
-				name="firstName"
-				label={translation("First name")}
-				placeholder="Make the change"
-				control={control}
-				required
-			/>
-
-			<FormTextField
-				name="lastName"
-				label={translation("Last name")}
-				placeholder="Make the change"
-				control={control}
-				required
-			/>
-
-			<FormTextField
-				name="pseudo"
-				label={translation("pseudo")}
-				placeholder="Make the change"
-				control={control}
-			/>
-
-			<FormTextField
-				name="email"
-				label={translation("Email")}
-				placeholder="Make the change"
-				control={control}
-				type="email"
-				required
-			/>
-			<FormTextField
-				name="adress"
-				label={translation("Adress")}
-				placeholder="Make the change"
-				control={control}
-				required
-			/>
-			<Controller
-				name="phoneNumber"
-				defaultValue=""
-				control={control}
-				render={({ field, fieldState }) => {
-					return (
-						<div data-cy="phone" className="relative w-full" id="phone-parent">
-							<p className="mb-2 w-full text-sm font-semibold text-fresh-gray-900 first-letter:uppercase md:text-base 2xl:text-lg">
-								{translation("form.phone")}
-							</p>
-							<div className="relative w-full">
-								<PhoneInput
-									country={"be"}
-									inputClass={`!w-full !border !border-fresh-gray-200 group-hover:!border-[#9ABE36] focus:!border-[#9ABE36] focus:!bg-fresh-gray-50 2xl:!text-lg group-hover:!bg-fresh-gray-50 min-h-[42px] ${
-										fieldState.error ? "!border-fresh-red-900" : ""
-									}`}
-									{...field}
-								/>
-							</div>
-							{fieldState.error && (
-								<p className="absolute right--3 -top-3 text-fresh-red-900 text-sm">
-									{fieldState.error.message}
-								</p>
-							)}
-						</div>
-					);
-				}}
-			/>
-			<ImageInput name="photoURL" control={control} />
-			<FormTextField
-				name="password"
-				label={translation("Password")}
-				placeholder="Make the change"
-				control={control}
-				type="password"
-				required
-			/>
-			<FormTextField
-				name="confirmPassword"
-				label={translation("Confirm password")}
-				placeholder="Make the change"
-				control={control}
-				type="password"
-				required
-			/>
-
-			<Controller
-				name="companySwitch"
-				control={control}
-				render={({ field }) => (
-					<FormControlLabel control={<Switch {...field} />} label="Company" />
-				)}
-			/>
-			{watchIfIsACompany && (
+		<>
+			<button onClick={handleSignupWithGoogle}>Sign up with Google</button>
+			<form
+				onSubmit={handleSubmit(handleUserSignupFormSubmit)}
+				className="w-full max-w-md gap-y-5 flex flex-col"
+			>
+				<span className="h-12">{errors?.email?.message as string}</span>
+				<h1 className="text-4xl font-medium mb-6">Signup</h1>
 				<FormTextField
-					name="company"
-					label={translation("Company")}
+					name="firstName"
+					label={translation("First name")}
+					placeholder="Make the change"
+					control={control}
+					required
+				/>
+
+				<FormTextField
+					name="lastName"
+					label={translation("Last name")}
+					placeholder="Make the change"
+					control={control}
+					required
+				/>
+
+				<FormTextField
+					name="pseudo"
+					label={translation("pseudo")}
 					placeholder="Make the change"
 					control={control}
 				/>
-			)}
 
-			<div className="flex items-center">
-				<Checkbox
-					{...register("termsOfUse")}
-					name="termsOfUse"
-					color="primary"
+				<FormTextField
+					name="email"
+					label={translation("Email")}
+					placeholder="Make the change"
+					control={control}
+					type="email"
+					required
 				/>
-				<span className="ml-2">
-					{translation("By signing up, you agree to our")}{" "}
-					<a
-						href="/terms-and-conditions"
-						target="_blank"
-						rel="noreferrer"
-						className="underline"
-					>
-						{translation("terms of use")}
-					</a>{" "}
-					{translation("and")}{" "}
-					<a
-						href="/privacy-policy"
-						target="_blank"
-						rel="noreferrer"
-						className="underline"
-					>
-						{translation("privacy policy")}
-					</a>
-				</span>
-			</div>
-			<Button
-				type="submit"
-				fullWidth
-				variant="contained"
-				color="secondary"
-				className="mt-4"
-				disabled={isSubmitting}
-			>
-				{isSubmitting ? "Loading..." : "Signup"}
-			</Button>
-			<p className="text-center mt-4">
-				{translation("Already have an account?")}{" "}
-				<Link href="/auth/login">{translation("form.login.button")}</Link>
-			</p>
-		</form>
+				<FormTextField
+					name="adress"
+					label={translation("Adress")}
+					placeholder="Make the change"
+					control={control}
+					required
+				/>
+				<Controller
+					name="phoneNumber"
+					defaultValue=""
+					control={control}
+					render={({ field, fieldState }) => {
+						return (
+							<div
+								data-cy="phone"
+								className="relative w-full"
+								id="phone-parent"
+							>
+								<p className="mb-2 w-full text-sm font-semibold text-fresh-gray-900 first-letter:uppercase md:text-base 2xl:text-lg">
+									{translation("form.phone")}
+								</p>
+								<div className="relative w-full">
+									<PhoneInput
+										country={"be"}
+										inputClass={`!w-full !border !border-fresh-gray-200 group-hover:!border-[#9ABE36] focus:!border-[#9ABE36] focus:!bg-fresh-gray-50 2xl:!text-lg group-hover:!bg-fresh-gray-50 min-h-[42px] ${
+											fieldState.error ? "!border-fresh-red-900" : ""
+										}`}
+										{...field}
+									/>
+								</div>
+								{fieldState.error && (
+									<p className="absolute right--3 -top-3 text-fresh-red-900 text-sm">
+										{fieldState.error.message}
+									</p>
+								)}
+							</div>
+						);
+					}}
+				/>
+				<ImageInput name="photoURL" control={control} />
+				<FormTextField
+					name="password"
+					label={translation("Password")}
+					placeholder="Make the change"
+					control={control}
+					type="password"
+					required
+				/>
+				<FormTextField
+					name="confirmPassword"
+					label={translation("Confirm password")}
+					placeholder="Make the change"
+					control={control}
+					type="password"
+					required
+				/>
+
+				<Controller
+					name="companySwitch"
+					control={control}
+					render={({ field }) => (
+						<FormControlLabel control={<Switch {...field} />} label="Company" />
+					)}
+				/>
+				{watchIfIsACompany && (
+					<FormTextField
+						name="company"
+						label={translation("Company")}
+						placeholder="Make the change"
+						control={control}
+					/>
+				)}
+
+				<div className="flex items-center">
+					<Checkbox
+						{...register("termsOfUse")}
+						name="termsOfUse"
+						color="primary"
+					/>
+					<span className="ml-2">
+						{translation("By signing up, you agree to our")}{" "}
+						<a
+							href="/terms-and-conditions"
+							target="_blank"
+							rel="noreferrer"
+							className="underline"
+						>
+							{translation("terms of use")}
+						</a>{" "}
+						{translation("and")}{" "}
+						<a
+							href="/privacy-policy"
+							target="_blank"
+							rel="noreferrer"
+							className="underline"
+						>
+							{translation("privacy policy")}
+						</a>
+					</span>
+				</div>
+				<Button
+					type="submit"
+					fullWidth
+					variant="contained"
+					color="secondary"
+					className="mt-4"
+					disabled={isSubmitting}
+				>
+					{isSubmitting ? "Loading..." : "Signup"}
+				</Button>
+				<p className="text-center mt-4">
+					{translation("Already have an account?")}{" "}
+					<Link href="/auth/login">{translation("form.login.button")}</Link>
+				</p>
+			</form>
+		</>
 	);
 };
 
