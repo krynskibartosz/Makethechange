@@ -1,5 +1,5 @@
 import { Control, Controller, FieldPath, FieldValues } from "react-hook-form";
-import { TextField, TextFieldProps } from "@material-ui/core";
+import { TextField, TextFieldProps } from "@mui/material";
 
 type FormTextFieldProps = {
 	name: FieldPath<FieldValues>;

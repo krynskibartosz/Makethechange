@@ -77,9 +77,10 @@ const Login = () => {
 			);
 			const user = userCredential.user;
 			const userData = await fetchUserData(user);
-			await storeUserDataInCache(user, { ...userData });
-
-			router.push("/dashboard");
+			if (userData.isAdmin) {
+				await storeUserDataInCache(user, { ...userData });
+				router.push("/admin");
+			}
 		} catch (error: any) {
 			setIsSubmitting(false);
 			handleLoginError(error);
@@ -104,30 +105,31 @@ const Login = () => {
 			const nameArray = data?.name?.split(" ");
 			const firstName = nameArray?.[0] as string;
 			const lastName = nameArray?.[nameArray.length - 1] as string;
-			login({
-				user: {
-					auth: {
-						isAuth: true,
-						accessToken: accessToken,
-						refreshToken: refreshToken,
+			if (data?.isAdmin) {
+				login({
+					user: {
+						auth: {
+							isAuth: true,
+							accessToken: accessToken,
+							refreshToken: refreshToken,
+						},
+						data: {
+							adress: data?.adress,
+							email: data?.email,
+							firstName,
+							lastName,
+							phoneNumber: data?.phoneNumber,
+							photoURL: data?.photoURL,
+							uid: data?.uid,
+							company: data?.entreprise,
+							pseudo: data?.pseudo,
+						},
 					},
-					data: {
-						adress: data?.adress,
-						email: data?.email,
-						firstName,
-						lastName,
-						phoneNumber: data?.phoneNumber,
-						photoURL: data?.photoURL,
-						uid: data?.uid,
-						company: data?.entreprise,
-						pseudo: data?.pseudo,
-					},
-				},
-			});
+				});
+			}
 
-			router.push("/dashboard");
+			router.push("/admin");
 		} catch (error) {
-			setIsSubmitting(false);
 			console.error(error);
 		}
 	};
@@ -172,9 +174,6 @@ const Login = () => {
 				</Button>
 			</form>
 
-			<Link href="/auth/signup" className="pt-5">
-				Pas encore de compte ? Inscrivez-vous{" "}
-			</Link>
 			<button onClick={handleLoginWithGoogle}>Login with Google</button>
 		</div>
 	);

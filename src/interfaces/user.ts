@@ -10,4 +10,5 @@ export type UserData = {
 	photoURL: string | Image;
 	pseudo?: string;
 	company?: string;
+	isAdmin?: boolean;
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, ChangeEvent } from "react";
-import { CardMedia, makeStyles } from "@material-ui/core";
+import { CardMedia } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 import {
 	Control,
 	FieldPath,
@@ -31,6 +32,8 @@ type ImageInputProps = {
 };
 
 export function ImageInput({ name, control, defaultValue }: ImageInputProps) {
+	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+	// @ts-ignore
 	const classes = useStyles();
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
