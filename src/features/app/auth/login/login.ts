@@ -2,7 +2,7 @@ import { doc, getDoc } from "firebase/firestore";
 
 import { User } from "firebase/auth";
 
-import { firestoreDB } from "@/features/auth/signup/constants";
+import { firestoreDB } from "@/features/app/auth/signup/constants";
 import { UserData } from "@/interfaces/user";
 
 import {

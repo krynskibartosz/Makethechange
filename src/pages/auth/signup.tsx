@@ -31,13 +31,13 @@ import {
 	updateUserProfileInFirebase,
 	saveUserSignupDataToFirestore,
 	getFirebaseErrorMessage,
-} from "@/features/auth/signup/signup";
+} from "@/features/app/auth/signup/signup";
 import { UserData } from "@/interfaces/user";
 import { Image } from "@/interfaces/common";
-import { minPasswordLength } from "@/features/auth/signup/constants";
+import { minPasswordLength } from "@/features/app/auth/signup/constants";
 import { FormTextField } from "@/components/forms/TextField";
 
-import { firestoreDB } from "@/features/auth/signup/constants";
+import { firestoreDB } from "@/features/app/auth/signup/constants";
 import {
 	signInWithPopup,
 	GoogleAuthProvider,
@@ -220,13 +220,18 @@ const Signup = () => {
 	}, [router, user.auth.isAuthenticated]);
 
 	return (
-		<>
-			<button onClick={handleSignupWithGoogle}>Sign up with Google</button>
+		<main className="pt-5">
+			<Button variant="outlined" onClick={handleSignupWithGoogle}>
+				{"S'inscrire avec Google"}
+			</Button>
 			<form
 				onSubmit={handleSubmit(handleUserSignupFormSubmit)}
 				className="w-full max-w-md gap-y-5 flex flex-col"
 			>
-				<span className="h-12">{errors?.email?.message as string}</span>
+				{(errors?.email?.message as string)?.length > 0 && (
+					<span className="h-12">{errors?.email?.message as string}</span>
+				)}
+
 				<h1 className="text-4xl font-medium mb-6">Signup</h1>
 				<FormTextField
 					name="firstName"
@@ -374,7 +379,7 @@ const Signup = () => {
 					<Link href="/auth/login">{translation("form.login.button")}</Link>
 				</p>
 			</form>
-		</>
+		</main>
 	);
 };
 

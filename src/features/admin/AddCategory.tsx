@@ -115,7 +115,10 @@ export const AddCategory = () => {
 	};
 
 	return (
-		<Card className="mt-10 xl:p-10 xl:pb-12 p-5 pb-7" variant="outlined">
+		<Card
+			className="mt-10 xl:p-8 xl:pb-12 p-5 pb-8 shadow-main"
+			variant="outlined"
+		>
 			<form
 				onSubmit={handleSubmit(onSubmit)}
 				className="w-full  gap-y-5 flex flex-col "

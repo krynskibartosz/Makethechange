@@ -16,10 +16,10 @@ import { FormTextField } from "@/components/forms/TextField";
 import {
 	fetchUserData,
 	getFirebaseLoginErrorMessage,
-} from "@/features/auth/login/login";
+} from "@/features/app/auth/login/login";
 import { User } from "firebase/auth";
 
-import { firestoreDB } from "@/features/auth/signup/constants";
+import { firestoreDB } from "@/features/app/auth/signup/constants";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -175,7 +175,7 @@ const Login = () => {
 			<Link href="/auth/signup" className="pt-5">
 				Pas encore de compte ? Inscrivez-vous{" "}
 			</Link>
-			<button onClick={handleLoginWithGoogle}>Login with Google</button>
+			<Button onClick={handleLoginWithGoogle}>Login with Google</Button>
 		</div>
 	);
 };

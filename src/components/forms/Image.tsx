@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, ChangeEvent } from "react";
 import { CardMedia } from "@mui/material";
-import { makeStyles } from "@mui/styles";
 import {
 	Control,
 	FieldPath,
@@ -13,14 +12,6 @@ import {
 	XCircleIcon,
 } from "@heroicons/react/24/outline";
 
-const useStyles = makeStyles({
-	root: {
-		margin: "0 auto",
-		width: "100%",
-	},
-	media: {},
-});
-
 type ImageInputProps = {
 	name: FieldPath<FieldValues>;
 	control: Control<FieldValues>;
@@ -32,9 +23,6 @@ type ImageInputProps = {
 };
 
 export function ImageInput({ name, control, defaultValue }: ImageInputProps) {
-	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	// @ts-ignore
-	const classes = useStyles();
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,7 +67,7 @@ export function ImageInput({ name, control, defaultValue }: ImageInputProps) {
 	};
 
 	return (
-		<div className={classes.root}>
+		<div>
 			<input
 				type="file"
 				accept="image/*"
@@ -92,7 +80,7 @@ export function ImageInput({ name, control, defaultValue }: ImageInputProps) {
 				{!selectedFile && (
 					<div
 						onClick={handleClickMedia}
-						className={`${classes.media} cursor-pointer relative border-2 border-dashed transition-all duration-300 ease-in-out group-hover:border-green-500 border-gray-200 rounded-sm h-32 w-full`}
+						className={` cursor-pointer relative border-2 border-dashed transition-all duration-300 ease-in-out group-hover:border-green-500 border-gray-200 rounded-sm h-32 w-full`}
 						title="Select Image"
 					>
 						<div className="absolute z-10 transform -translate-x-1/2 -translate-y-1/2  justify-center flex flex-col items-center   group top-1/2 left-1/2 ">
@@ -107,7 +95,7 @@ export function ImageInput({ name, control, defaultValue }: ImageInputProps) {
 				)}
 				{selectedFile && (
 					<CardMedia
-						className={`${classes.media} w-full h-32 relative rounded-md`}
+						className={` w-full h-32 relative rounded-md`}
 						image={field.value.dataURL}
 						title="Selected Image"
 					>

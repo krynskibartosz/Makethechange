@@ -1,5 +1,5 @@
 import { getFirestore } from "firebase/firestore";
-import { app } from "../../../pages/_app";
+import { app } from "../../../../pages/_app";
 
 //* Define firestoreDB constant for database connection
 export const firestoreDB = getFirestore(app);

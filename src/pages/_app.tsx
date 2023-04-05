@@ -8,13 +8,14 @@ import { appWithTranslation } from "next-i18next";
 import nextI18NextConfig from "../../next-i18next.config";
 
 import { ThemeProvider } from "@mui/styles";
-import { createTheme } from "@mui/material/styles";
 
-// import { CacheProvider } from '@emotion/react';
-// import createCache from '@emotion/cache';
-
-import Link from "next/link";
 import { useRouter } from "next/router";
+
+import { Sidebar } from "@/features/admin/Sidebar";
+import { createTheme } from "@mui/material/styles";
+import { Experimental_CssVarsProvider as CssVarsProvider } from "@mui/material/styles";
+import { AdminNavbar } from "@/features/admin/Navbar";
+import { AppNavbar } from "@/features/app/Navbar";
 
 const firebaseConfig = {
 	apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -25,43 +26,48 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 
-const theme = createTheme();
+const theme = createTheme({
+	palette: {
+		primary: {
+			main: "#9abe36",
+		},
+		secondary: {
+			main: "#fcb328",
+		},
+	},
+});
 
-function MyApp({ Component, pageProps }: AppProps) {
+const MyApp = ({ Component, pageProps }: AppProps) => {
 	const router = useRouter();
-	const links = [
-		{ name: "Accueil", link: "/" },
-		{ name: "Se connecter", link: "/auth/login" },
-		{ name: "S'inscrire", link: "/auth/signup" },
-	];
-
-	// Vérifier si l'utilisateur est sur la route "admin"
 	const isAdminRoute = router.pathname.startsWith("/admin");
 
-	// Si l'utilisateur est sur la route "admin", ne pas afficher le header
 	if (isAdminRoute) {
 		return (
-			<ThemeProvider theme={theme}>
-				<Component {...pageProps} />
-			</ThemeProvider>
+			<div className="bg-gray-50">
+				<CssVarsProvider>
+					<ThemeProvider theme={theme}>
+						<AdminNavbar />
+						<Sidebar />
+						<div className="ml-[240px] min-h-[calc(100vh-65px)] pb-20">
+							<Component {...pageProps} />
+						</div>
+					</ThemeProvider>
+				</CssVarsProvider>
+			</div>
 		);
 	}
 	return (
 		<>
-			<ThemeProvider theme={theme}>
-				<header className="w-full py-5 px-10">
-					<nav className="gap-x-10 flex">
-						{links.map((el, i) => (
-							<Link className="text-blue-500 underline" key={i} href={el.link}>
-								{el.name}
-							</Link>
-						))}
-					</nav>
-				</header>
-				<Component {...pageProps} />
-			</ThemeProvider>
+			<div className="bg-gray-50 ">
+				<CssVarsProvider>
+					<ThemeProvider theme={theme}>
+						<AppNavbar />
+						<Component {...pageProps} />
+					</ThemeProvider>
+				</CssVarsProvider>
+			</div>
 		</>
 	);
-}
+};
 
 export default appWithTranslation(MyApp, nextI18NextConfig);

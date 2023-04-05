@@ -9,7 +9,7 @@ import {
 	invalidEmailCode,
 	weakPasswordCode,
 	firestoreDB,
-} from "@/features/auth/signup/constants";
+} from "@/features/app/auth/signup/constants";
 import { UserData } from "@/interfaces/user";
 import { Image } from "@/interfaces/common";
 

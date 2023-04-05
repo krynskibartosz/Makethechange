@@ -1,6 +1,5 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
-import { makeStyles } from "tss-react/mui";
 
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
@@ -8,14 +7,6 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 import { TreeView, TreeItem } from "@mui/lab";
 
-const useStyles = makeStyles({
-	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	// @ts-ignore
-	root: {
-		flexGrow: 1,
-		maxWidth: 400,
-	},
-});
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 function renderTree(nodes) {
@@ -53,7 +44,6 @@ function CategoryTree({ data }) {
 	// eslint-disable-next-line react/prop-types
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 	// @ts-ignore
-	const classes = useStyles();
 	const [expanded, setExpanded] = useState([]);
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 	// @ts-ignore
@@ -62,9 +52,7 @@ function CategoryTree({ data }) {
 	};
 
 	return (
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		<div className={classes.root}>
+		<div>
 			<TreeView
 				defaultCollapseIcon={<ExpandMoreIcon />}
 				defaultExpandIcon={<ChevronRightIcon />}
