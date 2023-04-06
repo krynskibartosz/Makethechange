@@ -115,109 +115,99 @@ export const AddCategory = () => {
 	};
 
 	return (
-		<Card
-			className="mt-10 xl:p-8 xl:pb-12 p-5 pb-8 shadow-main"
-			variant="outlined"
+		<form
+			onSubmit={handleSubmit(onSubmit)}
+			className="w-full  gap-y-5 flex flex-col "
 		>
-			<form
-				onSubmit={handleSubmit(onSubmit)}
-				className="w-full  gap-y-5 flex flex-col "
-			>
-				<Typography variant="h4" component="h1" className="mb-6">
-					Rajouter une category
-				</Typography>
-				<FormTextField
-					name="name"
-					label={translation("Nom de la category")}
-					placeholder={translation("Soins personnels") as string}
-					control={control}
-					required
+			<FormTextField
+				name="name"
+				label={translation("Nom de la category")}
+				placeholder={translation("Soins personnels") as string}
+				control={control}
+				required
+			/>
+			<div className="flex gap-x-5 flex-wrap gap-y-2">
+				<TextField
+					label={translation("Nom de la sous category")}
+					placeholder={translation("Soins du visSelectedSubCategory") as string}
+					name="subCategory"
+					value={subCategoryName}
+					variant="outlined"
+					fullWidth
+					onChange={(e) => setSubCategoryName(e.target.value)}
 				/>
+				<Button variant="contained" color="primary" onClick={addSubCategory}>
+					Rajouter une sous category
+				</Button>
+			</div>
+			<ul className="flex gap-x-2 ">
+				{subCategories.map((subCategory, i) => (
+					<li key={i}>
+						<Chip
+							onDelete={() => handleDeleteSubCategory(i)}
+							label={subCategory}
+						/>
+					</li>
+				))}
+			</ul>
+			{subCategories.length > 0 && (
 				<div className="flex gap-x-5 flex-wrap gap-y-2">
 					<TextField
-						label={translation("Nom de la sous category")}
-						placeholder={
-							translation("Soins du visSelectedSubCategory") as string
-						}
-						name="subCategory"
-						value={subCategoryName}
+						label={translation("Nom du tag")}
+						placeholder={translation("Litchi") as string}
+						name="tag"
+						value={tagName}
 						variant="outlined"
 						fullWidth
-						onChange={(e) => setSubCategoryName(e.target.value)}
+						onChange={(e) => setTagName(e.target.value)}
 					/>
-					<Button variant="contained" color="primary" onClick={addSubCategory}>
-						Rajouter une sous category
+					<FormControl fullWidth>
+						<InputLabel id="demo-simple-select-label">
+							Sous category lier au tag
+						</InputLabel>
+						<Select
+							labelId="demo-simple-select-label"
+							id="demo-simple-select"
+							label="Sous category lier au tag"
+							value={selectedSubCategory}
+							// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+							// @ts-ignore
+							onChange={handleSubCategoryChange}
+						>
+							{subCategories.map((el, i) => (
+								<MenuItem key={i} value={el}>
+									{el}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
+
+					<Button variant="contained" color="primary" onClick={addTag}>
+						Rajouter un tag
 					</Button>
 				</div>
-				<ul className="flex gap-x-2 ">
-					{subCategories.map((subCategory, i) => (
-						<li key={i}>
-							<Chip
-								onDelete={() => handleDeleteSubCategory(i)}
-								label={subCategory}
-							/>
-						</li>
-					))}
-				</ul>
-				{subCategories.length > 0 && (
-					<div className="flex gap-x-5 flex-wrap gap-y-2">
-						<TextField
-							label={translation("Nom du tag")}
-							placeholder={translation("Litchi") as string}
-							name="tag"
-							value={tagName}
-							variant="outlined"
-							fullWidth
-							onChange={(e) => setTagName(e.target.value)}
+			)}
+
+			<ul className="flex gap-x-2">
+				{tags.map((tag, i) => (
+					<li key={i}>
+						<Chip
+							onDelete={() => handleDeleteTag(i)}
+							label={`${tag.name} - ${tag.subCategory}`}
 						/>
-						<FormControl fullWidth>
-							<InputLabel id="demo-simple-select-label">
-								Sous category lier au tag
-							</InputLabel>
-							<Select
-								labelId="demo-simple-select-label"
-								id="demo-simple-select"
-								label="Sous category lier au tag"
-								value={selectedSubCategory}
-								// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-								// @ts-ignore
-								onChange={handleSubCategoryChange}
-							>
-								{subCategories.map((el, i) => (
-									<MenuItem key={i} value={el}>
-										{el}
-									</MenuItem>
-								))}
-							</Select>
-						</FormControl>
+					</li>
+				))}
+			</ul>
 
-						<Button variant="contained" color="primary" onClick={addTag}>
-							Rajouter un tag
-						</Button>
-					</div>
-				)}
-
-				<ul className="flex gap-x-2">
-					{tags.map((tag, i) => (
-						<li key={i}>
-							<Chip
-								onDelete={() => handleDeleteTag(i)}
-								label={`${tag.name} - ${tag.subCategory}`}
-							/>
-						</li>
-					))}
-				</ul>
-
-				<Button
-					disabled={subCategories.length === 0}
-					type="submit"
-					variant="contained"
-					color="primary"
-					fullWidth
-				>
-					Rajouter une category
-				</Button>
-			</form>
-		</Card>
+			<Button
+				disabled={subCategories.length === 0}
+				type="submit"
+				variant="contained"
+				color="primary"
+				fullWidth
+			>
+				Rajouter une category
+			</Button>
+		</form>
 	);
 };

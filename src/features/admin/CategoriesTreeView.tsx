@@ -10,8 +10,21 @@ import { TreeView, TreeItem } from "@mui/lab";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 function renderTree(nodes) {
+	const handleEdit = () => null;
+	const handleEditTag = () => null;
 	return (
-		<TreeItem key={nodes.name} nodeId={nodes.name} label={nodes.name}>
+		<TreeItem
+			key={nodes.name}
+			nodeId={nodes.name}
+			label={
+				<div className="w-full flex justify-between">
+					<span>{nodes.name}</span>
+					{/* // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore */}
+					<button onClick={() => handleEdit(nodes)}>Modifier</button>
+				</div>
+			}
+		>
 			{Array.isArray(nodes.subcategories)
 				? // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 				  // @ts-ignore
@@ -29,7 +42,16 @@ function renderTree(nodes) {
 						<TreeItem
 							key={`${nodes.name}-${tag}`}
 							nodeId={`${nodes.name}-${tag}`}
-							label={tag}
+							label={
+								<div className="flex justify-between">
+									<span>{tag}</span>
+									{/* // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore */}
+									<button onClick={() => handleEditTag(nodes, tag)}>
+										Modifier
+									</button>
+								</div>
+							}
 						/>
 					))}
 				</TreeItem>
@@ -37,6 +59,7 @@ function renderTree(nodes) {
 		</TreeItem>
 	);
 }
+
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 // eslint-disable-next-line react/prop-types
